@@ -9,7 +9,7 @@ namespace AreaCard.Settings
         public static async Task<bool> CheckForUpdates()
         {
             await Task.Delay(0);
-            using (var mgr = await UpdateManager .GitHubUpdateManager("https://github.com/artygreis/PhoneBook"))
+            using (var mgr = await UpdateManager .GitHubUpdateManager("https://github.com/artygreis/AreaCard"))
             {
                 var result = await mgr.UpdateApp();
                 return result != null;

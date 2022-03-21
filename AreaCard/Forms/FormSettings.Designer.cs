@@ -96,6 +96,7 @@ namespace AreaCard.Forms
             this.picLoading.Location = new System.Drawing.Point(311, 116);
             this.picLoading.Name = "picLoading";
             this.picLoading.Size = new System.Drawing.Size(152, 19);
+            this.picLoading.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
             this.picLoading.TabIndex = 12;
             this.picLoading.TabStop = false;
             this.picLoading.Visible = false;
@@ -134,8 +135,8 @@ namespace AreaCard.Forms
             this.BackColor = System.Drawing.Color.Gainsboro;
             this.ClientSize = new System.Drawing.Size(775, 600);
             this.Controls.Add(this.txtInformation);
-            this.Controls.Add(this.lblVersion);
             this.Controls.Add(this.picLoading);
+            this.Controls.Add(this.lblVersion);
             this.Controls.Add(this.btnInstallUpdate);
             this.Controls.Add(this.btnCheck);
             this.Controls.Add(this.label2);

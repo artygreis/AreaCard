@@ -39,6 +39,7 @@ namespace AreaCard.Forms
             else
             {
                 lblVersion.Text = "Обновлений нет.";
+                lblVersion.Visible = true;
                 btnInstallUpdate.Visible = false;
             }
         }
