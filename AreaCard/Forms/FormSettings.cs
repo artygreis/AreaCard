@@ -1,6 +1,7 @@
 ﻿using AreaCard.Settings;
 using Squirrel;
 using System;
+using System.Drawing;
 using System.IO;
 using System.Reflection;
 using System.Windows.Forms;
@@ -49,6 +50,8 @@ namespace AreaCard.Forms
             if (AvailableUpdate)
             {
                 lblVersion.Text = "Найдена новая версия!!!";
+                btnCheck.Enabled = false;
+                btnCheck.BackColor = Color.Gray;
             }
             lblVersion.Visible = AvailableUpdate;
             btnInstallUpdate.Visible = AvailableUpdate;

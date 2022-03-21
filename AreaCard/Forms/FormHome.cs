@@ -46,6 +46,7 @@ namespace AreaCard.Forms
                         Properties.Settings.Default.UseDefault = false;
                         chbUseDefaultSource.Checked = Properties.Settings.Default.UseDefault;
                     }
+                    Properties.Settings.Default.Save();
                 }
                 else
                     return;

@@ -124,7 +124,7 @@ namespace AreaCard.Forms
             this.txtYear.Enabled = false;
             this.txtYear.Font = new System.Drawing.Font("Century Gothic", 11.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
             this.txtYear.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(140)))), ((int)(((byte)(140)))));
-            this.txtYear.Location = new System.Drawing.Point(571, 242);
+            this.txtYear.Location = new System.Drawing.Point(586, 242);
             this.txtYear.Mask = "0000";
             this.txtYear.Name = "txtYear";
             this.txtYear.Size = new System.Drawing.Size(100, 26);
