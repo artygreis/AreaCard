@@ -136,11 +136,12 @@ namespace AreaCard.Forms
         {
             cardsFromDocument = new List<Card>();
 
-            Application = new Word.Application();
-            Document = Application.Documents.Open(sourceFile);
-            Application.Visible = false;
             try
             {
+                Application = new Word.Application();
+                Document = Application.Documents.Open(sourceFile);
+                Application.Visible = false;
+
                 if (!ValidationDataTable(Document.Tables)) return false;
 
                 if (!ValidatedDataYear(Document.Tables[1].Cell(1, 2).Range.Text)) return false;
