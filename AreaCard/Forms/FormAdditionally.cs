@@ -9,7 +9,8 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Windows.Forms;
-using Word = Microsoft.Office.Interop.Word;
+using Xceed.Words.NET;
+using Xceed.Document.NET;
 
 namespace AreaCard.Forms
 {
@@ -17,9 +18,6 @@ namespace AreaCard.Forms
     {
         private CardCollection cardCollection;
         private string sourceEndFolder;
-
-        public Word.Document Document { get; set; }
-        public Word.Application Application { get; set; }
 
         public FormAdditionally()
         {
@@ -166,59 +164,53 @@ namespace AreaCard.Forms
             var sourceTemplate = $"{Assembly.GetExecutingAssembly().Location.Substring(0, Assembly.GetExecutingAssembly().Location.LastIndexOf('\\') + 1)}{Properties.Settings.Default.FileTemplate}";
             try
             {
-                Application = new Word.Application();
-                Document = Application.Documents.Open(sourceTemplate);
-                Application.Visible = false;
 
-                Document.Tables[1].Rows[1].Cells[2].Range.Text = txtYear.Text;
-
-                var table = Document.Tables[2];
-                var cards = cardCollection.GetCardsAll();
-                var lastIndex = firstIndex;
-                if (cards.Count > firstIndex + 19)
-                    lastIndex = firstIndex + 20;
-                else
-                    lastIndex = cards.IndexOf(cards.Last());
-                var k = 0;
-
-                for (int i = firstIndex; i < lastIndex; i++)
+                using (DocX document = DocX.Load(sourceTemplate))
                 {
-                    table.Cell(3 + k, 1).Range.Text = cards[i].Number;
+                    document.Tables[0].Rows[0].Cells[1].Paragraphs.First().Append(txtYear.Text).Bold();
 
-                    var lastDate = "";
-                    if (cards[i].In.GetValueOrDefault() > cards[i].LastDate.GetValueOrDefault())
-                    {
-                        lastDate = cards[i].In.GetValueOrDefault().ToString("dd.MM.yy");
-                    }
-                    else if (cards[i].In.GetValueOrDefault() == DateTime.MinValue && (!string.IsNullOrEmpty(cards[i].Name) || cards[i].Out.GetValueOrDefault() != DateTime.MinValue))
-                    {
-                        lastDate = "не сдан";
-                    }
-                    else if (cards[i].LastDate.GetValueOrDefault() != DateTime.MinValue)
-                    {
-                        lastDate = cards[i].LastDate.GetValueOrDefault().ToString("dd.MM.yy");
-                    }
+                    var table = document.Tables[1];
+
+                    var cards = cardCollection.GetCardsAll();
+                    var lastIndex = firstIndex;
+                    if (cards.Count > firstIndex + 19)
+                        lastIndex = firstIndex + 20;
                     else
+                        lastIndex = cards.IndexOf(cards.Last());
+                    var k = 0;
+
+                    for (int i = firstIndex; i < lastIndex; i++)
                     {
-                        lastDate = "";
+                        table.Rows[2 + k].Cells[0].Paragraphs.First().Append(cards[i].Number);
+
+                        var lastDate = "";
+                        if (cards[i].In.GetValueOrDefault() > cards[i].LastDate.GetValueOrDefault())
+                        {
+                            lastDate = cards[i].In.GetValueOrDefault().ToString("dd.MM.yy");
+                        }
+                        else if (cards[i].In.GetValueOrDefault() == DateTime.MinValue && (!string.IsNullOrEmpty(cards[i].Name) || cards[i].Out.GetValueOrDefault() != DateTime.MinValue))
+                        {
+                            lastDate = "не сдан";
+                        }
+                        else if (cards[i].LastDate.GetValueOrDefault() != DateTime.MinValue)
+                        {
+                            lastDate = cards[i].LastDate.GetValueOrDefault().ToString("dd.MM.yy");
+                        }
+                        else
+                        {
+                            lastDate = "";
+                        }
+                        table.Rows[2 + k].Cells[1].Paragraphs.First().Append(lastDate);
+                        k += 2;
                     }
-                    table.Cell(3 + k, 2).Range.Text = lastDate;
-                    k +=2 ;
+                    firstIndex = lastIndex;
+                    document.SaveAs(sourceEndFolder + '\\' + nameFile);
                 }
-                firstIndex = lastIndex;
-                Document.SaveAs2(sourceEndFolder + '\\' + nameFile);
             }
             catch
             {
                 MessageBox.Show("Возникла критическая ошибка, дальнейшее формирование буде прервано", "Ошибка!", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return false;
-            }
-            finally
-            {
-                if (Document != null)
-                    Document.Close();
-                if (Application != null)
-                    Application.Quit();
             }
             return true;
         }

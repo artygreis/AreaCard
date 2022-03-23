@@ -6,9 +6,10 @@ using System.Data;
 using System.Drawing;
 using System.IO;
 using System.Linq;
-using Word = Microsoft.Office.Interop.Word;
 using System.Windows.Forms;
 using System.Text.RegularExpressions;
+using Xceed.Words.NET;
+using Xceed.Document.NET;
 
 namespace AreaCard.Forms
 {
@@ -17,8 +18,6 @@ namespace AreaCard.Forms
         private LogInformation logInformation;
         private CardCollection cardCollection;
         private string currentYear;
-        public Word.Document Document { get; set; }
-        public Word.Application Application { get; set; }
         public FormHome()
         {
             InitializeComponent();
@@ -138,66 +137,60 @@ namespace AreaCard.Forms
 
             try
             {
-                Application = new Word.Application();
-                Document = Application.Documents.Open(sourceFile);
-                Application.Visible = false;
-
-                if (!ValidationDataTable(Document.Tables)) return false;
-
-                if (!ValidatedDataYear(Document.Tables[1].Cell(1, 2).Range.Text)) return false;
-
-                var cards = new List<Card>();
-
-                var table = Document.Tables[2];
-
-                for (int row = 3; row <= 41; row += 2)
+                using (DocX document = DocX.Load(sourceFile))
                 {
-                    var currentCard = new Card() { CardInfos = new List<CardInfo>() };
+                    if (!ValidationDataTable(document.Tables)) return false;
 
-                    var currentNumber = ClearFromSpecialSymbols(table.Cell(row, 1).Range.Text);
-                    if (string.IsNullOrEmpty(currentNumber))
+                    if (!ValidatedDataYear(document.Tables[0].Rows[0].Cells[1].Paragraphs.First().Text)) return false;
+
+                    var cards = new List<Card>();
+
+                    var table = document.Tables[1];
+
+                    for (int row = 2; row <= 40; row += 2)
                     {
-                        Log.Logger.Warn($"Отсутствует Номер участка в строке {row}.");
-                        continue;
-                    }
-                    currentCard.Number = currentNumber;
+                        var currentCard = new Card() { CardInfos = new List<CardInfo>() };
 
-                    var currentLastDate = ClearFromSpecialSymbols(table.Cell(row, 2).Range.Text);
-                    if (DateTime.TryParse(currentLastDate, out DateTime resultLastDate))
-                        currentCard.LastDate = resultLastDate;
+                        var currentNumber = ClearFromSpecialSymbols(table.Rows[row].Cells[0].Paragraphs.First().Text);
 
-                    var k = 0;
-                    for (int col = 3; col <= 6; col++)
-                    {
-                        if (ValidatedDataCardInfo(table.Cell(row, col).Range.Text, table.Cell(row + 1, col + k).Range.Text, table.Cell(row + 1, col + k + 1).Range.Text,
-                                out string name, out DateTime? outDate, out DateTime? inDate))
+                        if (string.IsNullOrEmpty(currentNumber))
                         {
-                            if (string.IsNullOrEmpty(name))
-                            {
-                                Log.Logger.Warn($"Отсутствует информация об Имени возвещателя с номером участка {currentCard.Number}");
-                            }
-
-                            currentCard.CardInfos.Add(new CardInfo() { Name = name, Out = outDate, In = inDate });
+                            Log.Logger.Warn($"Отсутствует Номер участка в строке {row}.");
+                            continue;
                         }
-                        k++;
+                        currentCard.Number = currentNumber;
+
+                        var currentLastDate = ClearFromSpecialSymbols(table.Rows[row].Cells[1].Paragraphs.First().Text);
+
+                        if (DateTime.TryParse(currentLastDate, out DateTime resultLastDate))
+                            currentCard.LastDate = resultLastDate;
+
+                        var k = 0;
+                        for (int col = 2; col <= 5; col++)
+                        {
+                            if (ValidatedDataCardInfo(table.Rows[row].Cells[col].Paragraphs.First().Text, table.Rows[row + 1].Cells[col + k].Paragraphs.First().Text, table.Rows[row + 1].Cells[col + k + 1].Paragraphs.First().Text,
+                                    out string name, out DateTime? outDate, out DateTime? inDate))
+                            {
+                                if (string.IsNullOrEmpty(name))
+                                {
+                                    Log.Logger.Warn($"Отсутствует информация об Имени возвещателя с номером участка {currentCard.Number}");
+                                }
+
+                                currentCard.CardInfos.Add(new CardInfo() { Name = name, Out = outDate, In = inDate });
+                            }
+                            k++;
+                        }
+
+                        cards.Add(currentCard);
                     }
 
-                    cards.Add(currentCard);
+                    cardsFromDocument = cards;
                 }
-
-                cardsFromDocument = cards;
             }
             catch (Exception exp)
             {
                 Log.Logger.Error($"{exp}. Необрабатываемое исключение в файле.");
                 return false;
-            }
-            finally
-            {
-                if (Document != null)
-                    Document.Close();
-                if (Application != null)
-                    Application.Quit();
             }
             return true;
         }
@@ -207,7 +200,7 @@ namespace AreaCard.Forms
         /// </summary>
         /// <param name="tables">Таблицы из документа</param>
         /// <returns></returns>
-        private bool ValidationDataTable(Word.Tables tables)
+        private bool ValidationDataTable(List<Table> tables)
         {
             if (tables.Count != 2)
             {
@@ -215,13 +208,13 @@ namespace AreaCard.Forms
                 return false;
             }
 
-            if (tables[1].Rows.Count != 1 || tables[1].Columns.Count != 2)
+            if (tables[0].RowCount != 1 || tables[0].ColumnCount != 2)
             {
                 Log.Logger.Warn($"Первая таблица не соответствует шаблону.");
                 return false;
             }
 
-            if (tables[2].Rows.Count != 42 || tables[2].Columns.Count != 10)
+            if (tables[1].RowCount != 42 || tables[1].ColumnCount != 10)
             {
                 Log.Logger.Warn($"Вторая таблица не соответствует шаблону.");
                 return false;
