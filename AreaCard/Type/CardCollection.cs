@@ -20,7 +20,7 @@ namespace AreaCard.Type
                 var cardViews = cards.Select(c => new CardView()
                 {
                     Number = c.Number,
-                    LastDate = c.LastDate.GetValueOrDefault(),
+                    LastDate = c.LastDate,
                     Name = c.CardInfos.Count() != 0 ? c.CardInfos.Last().Name : "",
                     Out = c.CardInfos.Count() != 0 ? c.CardInfos.Last().Out : null,
                     In = c.CardInfos.Count() != 0 ? c.CardInfos.Last().In : null

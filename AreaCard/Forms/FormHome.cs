@@ -110,10 +110,10 @@ namespace AreaCard.Forms
             for (int i = 0; i < files.Count; i++)
             {
                 worker.ReportProgress(i + 1);
-                Log.Logger.Info($"Файл {files[i]} принят в обработку.");
+                Log.Logger.Debug($"Файл {files[i]} принят в обработку.");
                 if (!ReadDataFromFile(files[i], out List<Card> cardsResult))
                 {
-                    Log.Logger.Info($"Файл не был обработан из-за обнаруженных ошибок.");
+                    Log.Logger.Warn($"Файл не был обработан из-за обнаруженных ошибок.");
                     continue;
                 }
                 else
@@ -121,7 +121,7 @@ namespace AreaCard.Forms
                     cardCollection.AddToColletion(cardsResult);
                 }
                 logInformation.CountReadyFiles++;
-                Log.Logger.Info($"Файл успешно обработан.");
+                Log.Logger.Debug($"Файл успешно обработан.");
             }
         }
 
@@ -133,58 +133,65 @@ namespace AreaCard.Forms
         /// <returns></returns>
         private bool ReadDataFromFile(string sourceFile, out List<Card> cardsFromDocument)
         {
+            currentYear = "";
             cardsFromDocument = new List<Card>();
 
             try
             {
                 using (DocX document = DocX.Load(sourceFile))
                 {
-                    if (!ValidationDataTable(document.Tables)) return false;
+                    if (!ValidationCountTable(document.Tables)) return false;
 
-                    if (!ValidatedDataYear(document.Tables[0].Rows[0].Cells[1].Paragraphs.First().Text)) return false;
-
-                    var cards = new List<Card>();
-
-                    var table = document.Tables[1];
-
-                    for (int row = 2; row <= 40; row += 2)
+                    for (int numberTabel = 0; numberTabel < document.Tables.Count; numberTabel += 2)
                     {
-                        var currentCard = new Card() { CardInfos = new List<CardInfo>() };
+                        if (!ValidationDataFirstTable(document.Tables[numberTabel], numberTabel + 1) 
+                            || !ValidationDataSecondTable(document.Tables[numberTabel + 1], numberTabel + 2)) continue;
 
-                        var currentNumber = ClearFromSpecialSymbols(table.Rows[row].Cells[0].Paragraphs.First().Text);
+                        if (!ValidatedDataYear(document.Tables[numberTabel].Rows[0].Cells[1].Paragraphs.First().Text, numberTabel + 1)) return false;
 
-                        if (string.IsNullOrEmpty(currentNumber))
+                        var cards = new List<Card>();
+
+                        var table = document.Tables[numberTabel + 1];
+
+                        for (int row = 2; row <= 40; row += 2)
                         {
-                            Log.Logger.Warn($"Отсутствует Номер участка в строке {row}.");
-                            continue;
-                        }
-                        currentCard.Number = currentNumber;
+                            var currentCard = new Card() { CardInfos = new List<CardInfo>() };
 
-                        var currentLastDate = ClearFromSpecialSymbols(table.Rows[row].Cells[1].Paragraphs.First().Text);
+                            var currentNumber = ClearFromSpecialSymbols(table.Rows[row].Cells[0].Paragraphs.First().Text);
 
-                        if (DateTime.TryParse(currentLastDate, out DateTime resultLastDate))
-                            currentCard.LastDate = resultLastDate;
-
-                        var k = 0;
-                        for (int col = 2; col <= 5; col++)
-                        {
-                            if (ValidatedDataCardInfo(table.Rows[row].Cells[col].Paragraphs.First().Text, table.Rows[row + 1].Cells[col + k].Paragraphs.First().Text, table.Rows[row + 1].Cells[col + k + 1].Paragraphs.First().Text,
-                                    out string name, out DateTime? outDate, out DateTime? inDate))
+                            if (string.IsNullOrEmpty(currentNumber))
                             {
-                                if (string.IsNullOrEmpty(name))
-                                {
-                                    Log.Logger.Warn($"Отсутствует информация об Имени возвещателя с номером участка {currentCard.Number}");
-                                }
-
-                                currentCard.CardInfos.Add(new CardInfo() { Name = name, Out = outDate, In = inDate });
+                                Log.Logger.Info($"Отсутствует Номер участка в таблице {numberTabel + 2} в строке {row}.");
+                                continue;
                             }
-                            k++;
+                            currentCard.Number = currentNumber;
+
+                            var currentLastDate = ClearFromSpecialSymbols(table.Rows[row].Cells[1].Paragraphs.First().Text);
+
+                            if (DateTime.TryParse(currentLastDate, out DateTime resultLastDate))
+                                currentCard.LastDate = resultLastDate;
+
+                            var k = 0;
+                            for (int col = 2; col <= 5; col++)
+                            {
+                                if (ValidatedDataCardInfo(table.Rows[row].Cells[col].Paragraphs.First().Text, table.Rows[row + 1].Cells[col + k].Paragraphs.First().Text, table.Rows[row + 1].Cells[col + k + 1].Paragraphs.First().Text,
+                                        out string name, out DateTime? outDate, out DateTime? inDate))
+                                {
+                                    if (string.IsNullOrEmpty(name))
+                                    {
+                                        Log.Logger.Info($"Отсутствует информация об Имени возвещателя с номером участка {currentCard.Number}");
+                                    }
+
+                                    currentCard.CardInfos.Add(new CardInfo() { Name = name, Out = outDate, In = inDate });
+                                }
+                                k++;
+                            }
+
+                            cards.Add(currentCard);
                         }
 
-                        cards.Add(currentCard);
+                        cardsFromDocument.AddRange(cards);
                     }
-
-                    cardsFromDocument = cards;
                 }
             }
             catch (Exception exp)
@@ -200,47 +207,54 @@ namespace AreaCard.Forms
         /// </summary>
         /// <param name="tables">Таблицы из документа</param>
         /// <returns></returns>
-        private bool ValidationDataTable(List<Table> tables)
+        private bool ValidationCountTable(List<Table> tables)
         {
-            if (tables.Count != 2)
+            if (tables.Count % 2 != 0)
             {
-                Log.Logger.Warn($"Количество таблиц в файле не равно 2.");
-                return false;
-            }
-
-            if (tables[0].RowCount != 1 || tables[0].ColumnCount != 2)
-            {
-                Log.Logger.Warn($"Первая таблица не соответствует шаблону.");
-                return false;
-            }
-
-            if (tables[1].RowCount != 42 || tables[1].ColumnCount != 10)
-            {
-                Log.Logger.Warn($"Вторая таблица не соответствует шаблону.");
+                Log.Logger.Warn($"Количество таблиц в файле не кратно 2.");
                 return false;
             }
 
             return true;
         }
+        private bool ValidationDataFirstTable(Table table, int numberTable)
+        {
+            if (table.RowCount != 1 || table.ColumnCount != 2)
+            {
+                Log.Logger.Warn($"Таблица-{numberTable} со служебным годом не соответствует шаблону.");
+                return false;
+            }
 
+            return true;
+        }
+        private bool ValidationDataSecondTable(Table table, int numberTable)
+        {
+            if (table.RowCount != 42 || table.ColumnCount != 10)
+            {
+                Log.Logger.Warn($"Таблица-{numberTable} с информацией об участках не соответствует шаблону.");
+                return false;
+            }
+
+            return true;
+        }
         /// <summary>
         /// Проверка информации о служебном годе
         /// </summary>
         /// <param name="yearFromTable">Год из документа</param>
         /// <returns></returns>
-        private bool ValidatedDataYear(string yearFromTable)
+        private bool ValidatedDataYear(string yearFromTable, int numberTable)
         {
             var year = ClearFromSpecialSymbols(yearFromTable);
             
             if (string.IsNullOrEmpty(year))
             {
-                Log.Logger.Warn($"Отсутствует информация о служебном годе.");
+                Log.Logger.Warn($"В таблице {numberTable} отсутствует информация о служебном годе.");
                 return false;
             }
 
             if (!Regex.IsMatch(year, @"\d") && (year.Count() != 4 || year.Count() != 2))
             {
-                Log.Logger.Warn($"Неверный формат года. Должно быть только число, например, 22 или 2022.");
+                Log.Logger.Warn($"В таблице {numberTable} неверный формат года. Должно быть только число, например, 22 или 2022.");
                 return false;
             }
 
@@ -249,7 +263,7 @@ namespace AreaCard.Forms
 
             if (currentYear != year)
             {
-                Log.Logger.Warn($"Данные за разные служебные года. Основной год: {currentYear}; год, полученный из файла: {year}.");
+                Log.Logger.Warn($"В таблице {numberTable} отличается служебный год. Основной год: {currentYear}; год, полученный из таблицы: {year}.");
                 return false;
             }
 

@@ -44,6 +44,8 @@ namespace AreaCard.Forms
             {
                 if ((e.RowData as LogData).TypeRecord == "WARN")
                     e.Style.BackColor = Color.LightCoral;
+                if ((e.RowData as LogData).TypeRecord == "INFO")
+                    e.Style.BackColor = Color.LightBlue;
             }
         }
 
