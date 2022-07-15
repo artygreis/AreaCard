@@ -36,6 +36,7 @@ namespace AreaCard.Forms
             this.picLoading = new System.Windows.Forms.PictureBox();
             this.lblVersion = new System.Windows.Forms.Label();
             this.txtInformation = new System.Windows.Forms.TextBox();
+            this.lnkLbInfo = new System.Windows.Forms.LinkLabel();
             ((System.ComponentModel.ISupportInitialize)(this.picLoading)).BeginInit();
             this.SuspendLayout();
             // 
@@ -128,12 +129,29 @@ namespace AreaCard.Forms
     "и замечаниями по работе с программой можете направлять по электронной почте area" +
     ".card22@gmail.com.";
             // 
+            // lnkLbInfo
+            // 
+            this.lnkLbInfo.ActiveLinkColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(140)))), ((int)(((byte)(140)))));
+            this.lnkLbInfo.AutoSize = true;
+            this.lnkLbInfo.Font = new System.Drawing.Font("Century Gothic", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+            this.lnkLbInfo.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(140)))), ((int)(((byte)(140)))));
+            this.lnkLbInfo.LinkColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(140)))), ((int)(((byte)(140)))));
+            this.lnkLbInfo.Location = new System.Drawing.Point(232, 474);
+            this.lnkLbInfo.Name = "lnkLbInfo";
+            this.lnkLbInfo.Size = new System.Drawing.Size(314, 19);
+            this.lnkLbInfo.TabIndex = 15;
+            this.lnkLbInfo.TabStop = true;
+            this.lnkLbInfo.Text = "Посмотреть сведения об изменениях";
+            this.lnkLbInfo.VisitedLinkColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(140)))), ((int)(((byte)(140)))));
+            this.lnkLbInfo.LinkClicked += new System.Windows.Forms.LinkLabelLinkClickedEventHandler(this.lnkLbInfo_LinkClicked);
+            // 
             // FormSettings
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.Gainsboro;
             this.ClientSize = new System.Drawing.Size(775, 600);
+            this.Controls.Add(this.lnkLbInfo);
             this.Controls.Add(this.txtInformation);
             this.Controls.Add(this.picLoading);
             this.Controls.Add(this.lblVersion);
@@ -158,5 +176,6 @@ namespace AreaCard.Forms
         private System.Windows.Forms.PictureBox picLoading;
         private System.Windows.Forms.Label lblVersion;
         private System.Windows.Forms.TextBox txtInformation;
+        private System.Windows.Forms.LinkLabel lnkLbInfo;
     }
 }

@@ -61,5 +61,11 @@ namespace AreaCard.Forms
         {
             UpdateManager.RestartApp(Path.GetFileName(Assembly.GetEntryAssembly().Location).Replace(".dll", ".exe"));
         }
+
+        private void lnkLbInfo_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+        {
+            var infoChanges = new FormInfoVersion();
+            infoChanges.ShowDialog();
+        }
     }
 }
